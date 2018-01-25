@@ -1,0 +1,38 @@
+version: '2'
+services:
+  hpcc-master:
+    image: hpccsystems/platform-ce:6.4.6-1.el7
+    command:  bash -c "sed -i 's/useDropZoneRestriction=true/useDropZoneRestriction=false/g' /etc/HPCCSystems/environment.conf; cd /tmp; set -e && /tmp/run_master.sh"
+    ports:
+      - "8010:8010"
+    links:
+      - hpcc-thor
+      - hpcc-roxie
+    privileged: true
+    tty: true
+    environment:
+      - MAX_ROXIE_INDEX=10
+      - MAX_THOR_INDEX=10
+      - SLAVES_PER_NODE=1
+
+  hpcc-thor:
+    image: hpccsystems/platform-ce:6.4.6-1.el7
+    privileged: true
+    tty: true
+
+  hpcc-roxie:
+    image: hpccsystems/platform-ce:6.4.6-1.el7
+    privileged: true
+    tty: true
+    
+  interlok:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mcwarman/interlok-hpcc-docker:latest
+    depends_on:
+      - hpcc-master
+    ports:
+      - 8080:8080
+    volumes:
+      - ./messages:/opt/interlok/messages

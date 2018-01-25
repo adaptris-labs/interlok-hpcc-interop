@@ -1,0 +1,45 @@
+<adapter>
+  <unique-id>interlok-hpcc-docker</unique-id>
+  <shared-components>
+    <connections>
+      <dfuplus-connection>
+        <unique-id>dfuplus-connection</unique-id>
+        <dfuplus-command>/opt/HPCCSystems/6.4.6/clienttools/bin/dfuplus</dfuplus-command>
+        <server>http://hpcc-master:8010</server>
+        <source-ip>interlok:7100</source-ip>
+      </dfuplus-connection>
+    </connections>
+    <services/>
+  </shared-components>
+  <channel-list>
+    <channel>
+      <unique-id>channel</unique-id>
+      <consume-connection class="null-connection" />
+      <produce-connection class="shared-connection">
+        <lookup-name>dfuplus-connection</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <unique-id>fs-to-thor</unique-id>
+          <consumer class="fs-consumer">
+            <destination class="configured-consume-destination">
+              <destination>./messages/in</destination>
+            </destination>
+            <poller class="fixed-interval-poller"/>
+            <create-dirs>true</create-dirs>
+          </consumer>
+          <service-collection class="service-list" />
+          <producer class="spray-to-thor">
+            <destination class="configured-produce-destination">
+              <destination>adp::messages::in::csv</destination>
+            </destination>
+            <cluster>mythor</cluster>
+            <overwrite>true</overwrite>
+            <format>CSV</format>
+            <max-record-size>8192</max-record-size>
+          </producer>
+        </standard-workflow>
+      </workflow-list>
+    </channel>
+  </channel-list>
+</adapter>
