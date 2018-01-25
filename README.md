@@ -7,9 +7,10 @@
 docker-compose up
 ```
 
-# Resources
+## Resources
 
 Interlok: http://localhost:8080
+
 ECL Watch: http://localhost:8010
 
 ## Testing
