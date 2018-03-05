@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   hpcc-master:
     image: hpccsystems/platform-ce:6.4.6-1.el7
@@ -24,12 +24,12 @@ services:
     image: hpccsystems/platform-ce:6.4.6-1.el7
     privileged: true
     tty: true
-    
+
   interlok:
     build:
       context: .
       dockerfile: Dockerfile
-    image: mcwarman/interlok-hpcc-docker:latest
+    image: adaptris/interlok-hpcc-docker:latest
     depends_on:
       - hpcc-master
     ports:
