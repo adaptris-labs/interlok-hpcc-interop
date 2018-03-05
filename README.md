@@ -24,5 +24,4 @@ cp sample.csv ./messages/in/
 
 ## Things to do
 
-* Register the interlok 'ip-address' was a trusted depsray location
-* Actually despray.
+* Configure a despray workflow.
