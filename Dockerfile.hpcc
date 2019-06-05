@@ -5,7 +5,8 @@ EXPOSE 8010 8002 8015 9876
 COPY docker-entrypoint.sh /
 
 RUN \
-  sed -i 's/useDropZoneRestriction=true/useDropZoneRestriction=false/g' /etc/HPCCSystems/environment.conf
+  sed -i 's/useDropZoneRestriction=true/useDropZoneRestriction=false/g' /etc/HPCCSystems/environment.conf && \
+  chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/usr/sbin/sshd", "-D"]
