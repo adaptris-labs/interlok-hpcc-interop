@@ -10,8 +10,8 @@ Uses the HPCC 7.2.14 image, along with the latest-hpcc interlok image, overlays 
 docker-compose up
 ```
 
-Connect to http://localhost:8080 and you'll see Interlok
-Connect to http://localhost:8010 and you'll see ECL Watch
+* Connect to http://localhost:8080 and you'll see Interlok
+* Connect to http://localhost:8010 and you'll see ECL Watch
 
 ```
 curl -d@sample.csv http://localhost:8080/api/spray
