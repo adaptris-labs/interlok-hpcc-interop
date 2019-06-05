@@ -1,0 +1,8 @@
+#Wed Oct 10 07:49:45 EDT 2018
+adapter.unique.id=interlok-hpcc
+adapter.fs.base.url=${adapter.base.url}/fs/${adapter.unique.id}
+adapter.base.url=file\://localhost/${user.dir}
+
+hpcc.server=http://${HPCC_HOST}:8010
+source.ip=${INTERLOK_HOST}:7100
+dfuplus.cmd=/usr/bin/dfuplus

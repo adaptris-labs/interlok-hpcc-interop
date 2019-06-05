@@ -1,0 +1,55 @@
+<adapter>
+  <unique-id>${adapter.unique.id}</unique-id>
+  <shared-components>
+    <connections>
+      <dfuplus-connection>
+        <unique-id>dfuplus-connection</unique-id>
+        <dfuplus-command>${dfuplus.cmd}</dfuplus-command>
+        <server>${hpcc.server}</server>
+        <source-ip>${source.ip}</source-ip>
+      </dfuplus-connection>
+    </connections>
+    <services/>
+  </shared-components>
+  <channel-list>
+    <channel>
+      <consume-connection class="jetty-embedded-connection"/>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jetty-message-consumer">
+            <unique-id>spray-to-thor</unique-id>
+            <destination class="configured-consume-destination">
+              <destination>/api/spray</destination>
+            </destination>
+          </consumer>
+          <service-collection class="service-list">
+            <services>
+              <standalone-producer>
+                <connection class="shared-connection">
+                  <lookup-name>dfuplus-connection</lookup-name>
+                </connection>
+                <producer class="spray-to-thor">
+                  <destination class="configured-destination">
+                    <destination>messages::in::csv</destination>
+                  </destination>
+                  <cluster>mythor</cluster>
+                  <overwrite>true</overwrite>
+                  <spray-format class="spray-format-csv"/>
+                </producer>
+              </standalone-producer>
+              <payload-from-metadata-service>
+                <template><![CDATA[{"operation":"success"}]]></template>
+              </payload-from-metadata-service>
+              <jetty-response-service>
+                <unique-id>big-ardinghelli</unique-id>
+                <http-status>200</http-status>
+                <content-type>application/json</content-type>
+              </jetty-response-service>
+            </services>
+          </service-collection>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>hpcc-jetty</unique-id>
+    </channel>
+  </channel-list>
+</adapter>
