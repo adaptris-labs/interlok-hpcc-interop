@@ -14,13 +14,14 @@ docker-compose up
 * Connect to http://localhost:8010 and you'll see ECL Watch
 
 ```
-curl -d@sample.csv http://localhost:8080/api/spray
+curl -d'1,2,3,4' http://localhost:8080/api/spray
 ```
 
-you will see it appear in ECL Watch as `messages::in::csv` (note that while it is a CSV, if you're doing it via curl, it might come out as a single line).
+you will see it appear in ECL Watch as `messages::in::csv`
 
 ## Things to do
 
+* Make the name metadata driven; from your URL.
 * Make the name dynamic, in case you spray more than once...
 * Configure a despray workflow.
 * Do other funky things like download something from S3 before spraying it.
