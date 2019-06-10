@@ -4,7 +4,10 @@
 
     <Console name="Console" target="SYSTEM_OUT">
       <PatternLayout>
+<!--
         <Pattern>%highlight{%-5p [%t] [%c{1.}] %m%n%throwable}{FATAL=bright white, ERROR=bright red, WARN=bright yellow, INFO=magenta, DEBUG=green, TRACE=cyan}</Pattern>
+-->
+        <Pattern>%d{ISO8601} %-5p [%t] [%c{1.}] %m%n</Pattern>
       </PatternLayout>
     </Console>
 
