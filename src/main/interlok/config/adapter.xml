@@ -8,9 +8,37 @@
         <server>${hpcc.server}</server>
         <source-ip>${source.ip}</source-ip>
       </dfuplus-connection>
+      <amazon-s3-connection>
+        <unique-id>shared-amazon-s3</unique-id>
+        <authentication class="aws-keys-authentication">
+          <access-key>${amazon.access.key}</access-key>
+          <secret-key>${amazon.secret.key}</secret-key>
+        </authentication>
+        <region>${amazon.region}</region>
+      </amazon-s3-connection>
     </connections>
     <services/>
   </shared-components>
+  <message-error-handler class="standard-processing-exception-handler">
+    <processing-exception-service class="service-list">
+      <services>
+        <exception-report-service>
+          <exception-serializer class="exception-as-json"/>
+        </exception-report-service>
+        <standalone-producer>
+          <producer class="jetty-standard-response-producer">
+            <status-provider class="http-configured-status">
+              <status>INTERNAL_ERROR_500</status>
+            </status-provider>
+            <content-type-provider class="http-configured-content-type-provider">
+              <mime-type>application/json</mime-type>
+            </content-type-provider>
+            <send-payload>true</send-payload>
+          </producer>
+        </standalone-producer>
+      </services>
+    </processing-exception-service>
+  </message-error-handler>
   <channel-list>
     <channel>
       <consume-connection class="jetty-embedded-connection"/>
@@ -19,37 +47,258 @@
           <consumer class="jetty-message-consumer">
             <unique-id>spray-to-thor</unique-id>
             <destination class="configured-consume-destination">
-              <destination>/api/spray</destination>
+              <destination>/api/hpcc/*</destination>
             </destination>
           </consumer>
           <service-collection class="service-list">
             <services>
-              <standalone-producer>
-                <connection class="shared-connection">
-                  <lookup-name>dfuplus-connection</lookup-name>
-                </connection>
-                <producer class="spray-to-thor">
-                  <destination class="configured-destination">
-                    <destination>messages::in::csv</destination>
-                  </destination>
-                  <cluster>mythor</cluster>
-                  <overwrite>true</overwrite>
-                  <spray-format class="spray-format-csv"/>
-                </producer>
-              </standalone-producer>
-              <payload-from-metadata-service>
-                <template><![CDATA[{"operation":"success"}]]></template>
-              </payload-from-metadata-service>
+              <branching-service-collection>
+                <unique-id>http-router</unique-id>
+                <first-service-id>route</first-service-id>
+                <services>
+                  <jetty-routing-service>
+                    <unique-id>route</unique-id>
+                    <route>
+                      <url-pattern>^/api/hpcc/s3-to-hpcc$</url-pattern>
+                      <method>POST</method>
+                      <service-id>s3-to-hpcc</service-id>
+                    </route>
+                    <route>
+                      <url-pattern>^/api/hpcc/despray/(.*)$</url-pattern>
+                      <method>GET</method>
+                      <metadata-key>hpcc-filename</metadata-key>
+                      <service-id>hpcc-despray</service-id>
+                    </route>
+                    <default-service-id>not-handled</default-service-id>
+                  </jetty-routing-service>
+                  <service-list>
+                    <unique-id>s3-to-hpcc</unique-id>
+                    <services>
+                      <json-path-service>
+                        <source class="string-payload-data-input-parameter"/>
+                        <json-path-execution>
+                          <source class="constant-data-input-parameter">
+                            <value>$.filename</value>
+                          </source>
+                          <target class="metadata-data-output-parameter">
+                            <metadata-key>s3filename</metadata-key>
+                          </target>
+                        </json-path-execution>
+                        <json-path-execution>
+                          <source class="constant-data-input-parameter">
+                            <value>$.bucket</value>
+                          </source>
+                          <target class="metadata-data-output-parameter">
+                            <metadata-key>s3bucket</metadata-key>
+                          </target>
+                        </json-path-execution>
+                      </json-path-service>
+                      <amazon-s3-service>
+                        <unique-id>download-from-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>shared-amazon-s3</lookup-name>
+                        </connection>
+                        <operation class="amazon-s3-download">
+                          <bucket-name class="constant-data-input-parameter">
+                            <value>%message{s3bucket}</value>
+                          </bucket-name>
+                          <key class="constant-data-input-parameter">
+                            <value>%message{s3filename}</value>
+                          </key>
+                        </operation>
+                      </amazon-s3-service>
+                      <standalone-producer>
+                        <unique-id>spray-to-thor</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>dfuplus-connection</lookup-name>
+                        </connection>
+                        <producer class="spray-to-thor">
+                          <destination class="configured-destination">
+                            <destination>messages::in::%message{s3filename}</destination>
+                          </destination>
+                          <cluster>mythor</cluster>
+                          <overwrite>true</overwrite>
+                          <spray-format class="spray-format-csv"/>
+                        </producer>
+                      </standalone-producer>
+                      <payload-from-metadata-service>
+                        <unique-id>set success payload</unique-id>
+                        <template><![CDATA[{"operation":"success"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 200 response code</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>404</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                  <service-list>
+                    <unique-id>hpcc-despray</unique-id>
+                    <services>
+                      <payload-from-metadata-service>
+                        <template><![CDATA[{"failure": "not-yet-implemented"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 501 Not Implemented</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>501</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                  <service-list>
+                    <unique-id>not-handled</unique-id>
+                    <services>
+                      <payload-from-metadata-service>
+                        <template><![CDATA[{"failure": "not-handled"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 404 ERROR code</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>404</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                </services>
+              </branching-service-collection>
               <jetty-response-service>
-                <unique-id>big-ardinghelli</unique-id>
-                <http-status>200</http-status>
+                <unique-id>send-response</unique-id>
+                <http-status>%message{HTTP_RESPONSE}</http-status>
                 <content-type>application/json</content-type>
               </jetty-response-service>
             </services>
           </service-collection>
         </standard-workflow>
       </workflow-list>
-      <unique-id>hpcc-jetty</unique-id>
+      <unique-id>jetty-to-hpcc</unique-id>
+    </channel>
+    <channel>
+      <consume-connection class="jetty-embedded-connection"/>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jetty-message-consumer">
+            <unique-id>aws</unique-id>
+            <destination class="configured-consume-destination">
+              <destination>/api/aws/*</destination>
+            </destination>
+          </consumer>
+          <service-collection class="service-list">
+            <services>
+              <branching-service-collection>
+                <unique-id>http-router</unique-id>
+                <first-service-id>route</first-service-id>
+                <services>
+                  <jetty-routing-service>
+                    <unique-id>route</unique-id>
+                    <route>
+                      <url-pattern>^/api/aws/s3/upload$</url-pattern>
+                      <method>POST</method>
+                      <service-id>s3-upload</service-id>
+                    </route>
+                    <route>
+                      <url-pattern>^/api/aws/s3/(.*)/(.*)$</url-pattern>
+                      <method>DELETE</method>
+                      <metadata-key>s3bucket</metadata-key>
+                      <metadata-key>s3filename</metadata-key>
+                      <service-id>s3-delete</service-id>
+                    </route>
+                    <default-service-id>not-handled</default-service-id>
+                  </jetty-routing-service>
+                  <service-list>
+                    <unique-id>s3-upload</unique-id>
+                    <services>
+                      <generate-unique-metadata-value-service>
+                        <unique-id>generate unique-id</unique-id>
+                        <metadata-key>uid</metadata-key>
+                        <generator class="safe-guid-generator"/>
+                      </generate-unique-metadata-value-service>
+                      <amazon-s3-service>
+                        <unique-id>upload-to-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>shared-amazon-s3</lookup-name>
+                        </connection>
+                        <operation class="amazon-s3-upload">
+                          <bucket-name class="constant-data-input-parameter">
+                            <value>${amazon.s3.bucket}</value>
+                          </bucket-name>
+                          <key class="constant-data-input-parameter">
+                            <value>%message{uid}</value>
+                          </key>
+                        </operation>
+                      </amazon-s3-service>
+                      <payload-from-metadata-service>
+                        <template><![CDATA[{"filename":"%message{uid}", "bucket":"${amazon.s3.bucket}"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 200 response code</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>200</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                  <service-list>
+                    <unique-id>s3-delete</unique-id>
+                    <services>
+                      <amazon-s3-service>
+                        <unique-id>delete-from-s3</unique-id>
+                        <connection class="shared-connection">
+                          <lookup-name>shared-amazon-s3</lookup-name>
+                        </connection>
+                        <operation class="amazon-s3-delete">
+                          <bucket-name class="constant-data-input-parameter">
+                            <value>%message{s3bucket}</value>
+                          </bucket-name>
+                          <key class="constant-data-input-parameter">
+                            <value>%message{s3filename}</value>
+                          </key>
+                        </operation>
+                      </amazon-s3-service>
+                      <payload-from-metadata-service>
+                        <template><![CDATA[{"operation":"success"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 200 response code</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>200</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                  <service-list>
+                    <unique-id>not-handled</unique-id>
+                    <services>
+                      <payload-from-metadata-service>
+                        <template><![CDATA[{"failure": "not-handled"}]]></template>
+                      </payload-from-metadata-service>
+                      <add-metadata-service>
+                        <unique-id>Add 404 ERROR code</unique-id>
+                        <metadata-element>
+                          <key>HTTP_RESPONSE</key>
+                          <value>404</value>
+                        </metadata-element>
+                      </add-metadata-service>
+                    </services>
+                  </service-list>
+                </services>
+              </branching-service-collection>
+              <jetty-response-service>
+                <unique-id>send-response</unique-id>
+                <http-status>%message{HTTP_RESPONSE}</http-status>
+                <content-type>application/json</content-type>
+              </jetty-response-service>
+            </services>
+          </service-collection>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>jetty-to-s3</unique-id>
     </channel>
   </channel-list>
 </adapter>

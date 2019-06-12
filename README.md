@@ -1,9 +1,26 @@
 # interlok-hpcc-docker
 
-Uses the HPCC 7.2.14 image, along with the latest-hpcc interlok image, overlays some additional jars on top
+Uses the HPCC 7.2.14 image, along with the latest-hpcc interlok image, overlays some additional jars on top. The configuration contains a
 
+* Channel that
+   * Accepts HTTP POST request, and uploads that data as a new file in the configured S3 bucket under a unique-name
+   * Accepts HTTP DELETE request that deletes the associated file.
+* Channel that
+   * Accepts a HTTP POST request (the payload should be output from the s3-upload); downloads that file from S3 and sprays it into HPCC;
+   * Accepts a GET request for a file, and returns a 501 (you could fill this in with a desprayer)
 
 ## Quickstart
+
+Create a file __src/main/interlok/variables-local.properties.[hostname]__; this is where you'll store all your secret keys...
+
+```
+amazon.access.key=My_Access_Key
+amazon.secret.key=My_Secret_Key
+amazon.region=The region you created the bucket
+amazon.s3.bucket=the target bucket name
+```
+
+Then after that you can
 
 ```
 ./gradlew docker
@@ -14,14 +31,33 @@ docker-compose up
 * Connect to http://localhost:8010 and you'll see ECL Watch
 
 ```
-curl -d'1,2,3,4' http://localhost:8080/api/spray
+# Upload a simple CSV to S3.
+$ curl -XPOST -d'1,2,3,4' http://localhost:8080/api/aws/s3/upload
+{"filename":"4c11cf3c87d04ee6ac67d5c41f0b0f3b", "bucket":"zzlc-s3-bucket"}
+
+# Take the output of the previous operation, and spray into hpcc
+$ curl -XPOST -d'{"filename":"4c11cf3c87d04ee6ac67d5c41f0b0f3b", "bucket":"zzlc-s3-bucket"}' http://localhost:8080/api/hpcc/s3-to-hpcc
+{"operation":"success"}
+
+# Delete the file from S3...
+$ curl -XDELETE http://localhost:8080/api/aws/s3/zzlc-s3-bucket/4c11cf3c87d04ee6ac67d5c41f0b0f3b
+{"operation":"success"}
+
+## Attempt to despray it (not yet implemented, so 501 is expected)
+$ curl -i -XGET http://localhost:8080/api/hpcc/despray/4c11cf3c87d04ee6ac67d5c41f0b0f3b
+HTTP/1.1 501 Not Implemented
+Content-Type: application/json
+Transfer-Encoding: chunked
+Server: Jetty(9.4.15.v20190215)
+
+{"failure": "not-yet-implemented"}
+
+
 ```
 
-you will see it appear in ECL Watch as `messages::in::csv`
 
 ## Things to do
 
-* Make the name metadata driven; from your URL.
-* Make the name dynamic, in case you spray more than once...
-* Configure a despray workflow.
-* Do other funky things like download something from S3 before spraying it.
+* Refactor to use shared-services; since the pair that adds 200 OK + `{"operation":"success"}` should just be a shared-service.
+* Fill in the "GET" branch in the api/spray channel that despray so we don't get a 501 error anymore.
+
