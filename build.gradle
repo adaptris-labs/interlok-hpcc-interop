@@ -16,7 +16,6 @@ ext {
   defaultNexusRepo = project.hasProperty('defaultNexusRepo') ? project.getProperty('defaultNexusRepo') : 'https://repo1.maven.org/maven2/'
   dockerImageName = project.hasProperty('dockerImageName') ? project.getProperty('dockerImageName') : "adaptrislabs/hpcc-interlok"
 
-  buildEnv=project.hasProperty("buildEnv") ? project.getProperty("buildEnv") : "docker"
   adapterSourceConfig = "${projectDir}/src/main/interlok/config"
   adapterTmpConfigDirectory = "${buildDir}/tmp/config-resolve"
 
@@ -35,9 +34,6 @@ repositories {
 }
 
 ext.hostname = { ->
-  if (buildEnv.equalsIgnoreCase("docker")) {
-    return "docker"
-  }
   if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     return System.getenv("COMPUTERNAME")
   }
@@ -56,7 +52,7 @@ task localizeConfig(type: Copy) {
   from "${adapterSourceConfig}"
   into "${adapterTmpConfigDirectory}"
   doLast {
-    overwriteWithLocal("variables.properties", "${adapterTmpConfigDirectory}")
+    overwriteWithLocal("variables-local.properties", "${adapterTmpConfigDirectory}")
     overwriteWithLocal("log4j2.xml", "${adapterTmpConfigDirectory}")
     overwriteWithLocal("license.properties", "${adapterTmpConfigDirectory}")
   }
@@ -130,7 +126,7 @@ distributions {
       }
       // Exclude the localized property files
       exclude "**/*.properties.*"
-      exclude "config/variables.properties"
+      exclude "config/variables-local.properties"
       exclude "**/*.xml.*"
       rename '(.*)-[0-9]+\\..*.jar', '$1.jar'
       rename '(.*)-[0-9]+\\..*.war', '$1.war'

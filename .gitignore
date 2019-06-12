@@ -1,3 +1,4 @@
 gradle.properties
 *.lhrm32445
 build
+variables-local.properties.*
