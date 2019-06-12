@@ -60,4 +60,5 @@ Server: Jetty(9.4.15.v20190215)
 
 * Refactor to use shared-services; since the pair that adds 200 OK + `{"operation":"success"}` should just be a shared-service.
 * Fill in the "GET" branch in the api/spray channel that despray so we don't get a 501 error anymore.
+* Switch to using the new _switch_ service once 3.9 is available.
 
