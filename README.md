@@ -11,7 +11,13 @@ Uses the HPCC 7.2.14 image, along with the latest-hpcc interlok image, overlays 
 
 ## Quickstart
 
-Create a file __src/main/interlok/variables-local.properties.[hostname]__; this is where you'll store all your secret keys...
+Create a file __src/main/interlok/config/variables-local.properties.hostname__; where hostname is the name of your machine; you can use `variables-local.properties` if you wish, but the *hostname* variant is auto excluded in the git ignore (so you won't check your secret keys in!)
+
+* On Windows that will be the value of COMPUTERNAME environment variable
+* On Linux that will be the HOSTNAME env variarable
+* On Mac; the HOSTNAME environment variable isn't always defined...
+
+This is where you'll store all your secret keys...
 
 ```
 amazon.access.key=My_Access_Key
@@ -23,8 +29,8 @@ amazon.s3.bucket=the target bucket name
 Then after that you can
 
 ```
-./gradlew docker
-docker-compose up
+# Build the docker image and effectively runs `docker-compose up -d`
+$ ./gradlew docker dockerComposeUp
 ```
 
 * Connect to http://localhost:8080 and you'll see Interlok
