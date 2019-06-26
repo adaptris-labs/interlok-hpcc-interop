@@ -52,26 +52,13 @@
           </consumer>
           <service-collection class="service-list">
             <services>
-              <branching-service-collection>
-                <unique-id>http-router</unique-id>
-                <first-service-id>route</first-service-id>
-                <services>
-                  <jetty-routing-service>
-                    <unique-id>route</unique-id>
-                    <route>
-                      <url-pattern>^/api/hpcc/s3-to-hpcc$</url-pattern>
-                      <method>POST</method>
-                      <service-id>s3-to-hpcc</service-id>
-                    </route>
-                    <route>
-                      <url-pattern>^/api/hpcc/despray/(.*)$</url-pattern>
-                      <method>GET</method>
-                      <metadata-key>hpcc-filename</metadata-key>
-                      <service-id>hpcc-despray</service-id>
-                    </route>
-                    <default-service-id>not-handled</default-service-id>
-                  </jetty-routing-service>
-                  <service-list>
+              <switch>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/hpcc/s3-to-hpcc$</url-pattern>
+                    <method>POST</method>
+                  </condition>
+                  <service class="service-list">
                     <unique-id>s3-to-hpcc</unique-id>
                     <services>
                       <json-path-service>
@@ -129,12 +116,19 @@
                         <unique-id>Add 200 response code</unique-id>
                         <metadata-element>
                           <key>HTTP_RESPONSE</key>
-                          <value>404</value>
+                          <value>200</value>
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                  <service-list>
+                  </service>`
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/hpcc/despray/(.*)$</url-pattern>
+                    <method>GET</method>
+                    <metadata-key>hpcc-filename</metadata-key>
+                  </condition>
+                  <service class="service-list">
                     <unique-id>hpcc-despray</unique-id>
                     <services>
                       <payload-from-metadata-service>
@@ -148,8 +142,11 @@
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                  <service-list>
+                  </service>
+                </case>
+                <case>
+                  <condition class="case-default"/>
+                  <service class="service-list">
                     <unique-id>not-handled</unique-id>
                     <services>
                       <payload-from-metadata-service>
@@ -163,9 +160,9 @@
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                </services>
-              </branching-service-collection>
+                  </service>
+                </case>
+              </switch>
               <jetty-response-service>
                 <unique-id>send-response</unique-id>
                 <http-status>%message{HTTP_RESPONSE}</http-status>
@@ -189,27 +186,13 @@
           </consumer>
           <service-collection class="service-list">
             <services>
-              <branching-service-collection>
-                <unique-id>http-router</unique-id>
-                <first-service-id>route</first-service-id>
-                <services>
-                  <jetty-routing-service>
-                    <unique-id>route</unique-id>
-                    <route>
-                      <url-pattern>^/api/aws/s3/upload$</url-pattern>
-                      <method>POST</method>
-                      <service-id>s3-upload</service-id>
-                    </route>
-                    <route>
-                      <url-pattern>^/api/aws/s3/(.*)/(.*)$</url-pattern>
-                      <method>DELETE</method>
-                      <metadata-key>s3bucket</metadata-key>
-                      <metadata-key>s3filename</metadata-key>
-                      <service-id>s3-delete</service-id>
-                    </route>
-                    <default-service-id>not-handled</default-service-id>
-                  </jetty-routing-service>
-                  <service-list>
+              <switch>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/aws/s3/upload$</url-pattern>
+                    <method>POST</method>
+                  </condition>
+                  <service class="service-list">
                     <unique-id>s3-upload</unique-id>
                     <services>
                       <generate-unique-metadata-value-service>
@@ -242,8 +225,16 @@
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                  <service-list>
+                  </service>
+                </case>
+                <case>
+                  <condition class="jetty-route-condition">
+                    <url-pattern>^/api/aws/s3/(.*)/(.*)$</url-pattern>
+                    <method>DELETE</method>
+                    <metadata-key>s3bucket</metadata-key>
+                    <metadata-key>s3filename</metadata-key>
+                  </condition>
+                  <service class="service-list">
                     <unique-id>s3-delete</unique-id>
                     <services>
                       <amazon-s3-service>
@@ -271,8 +262,11 @@
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                  <service-list>
+                  </service>
+                </case>
+                <case>
+                  <condition class="case-default"/>
+                  <service class="service-list">
                     <unique-id>not-handled</unique-id>
                     <services>
                       <payload-from-metadata-service>
@@ -286,9 +280,9 @@
                         </metadata-element>
                       </add-metadata-service>
                     </services>
-                  </service-list>
-                </services>
-              </branching-service-collection>
+                  </service>
+                </case>
+              </switch>
               <jetty-response-service>
                 <unique-id>send-response</unique-id>
                 <http-status>%message{HTTP_RESPONSE}</http-status>
