@@ -56,6 +56,7 @@
     <Logger name="org.hibernate.cache.EhCacheProvider" level="ERROR"/>
     <Logger name="com.mchange.v2.resourcepool.BasicResourcePool" level="ERROR"/>
     <Logger name="com.sun.jersey" level="ERROR"/>
+    <Logger name="org.reflections" level="ERROR"/>
     <Logger name="com.adaptris" level="TRACE"/>
     <Logger name="com.adaptris.jmx" level="INFO"/>
     <Logger name="com.adaptris.hub.dao" level="DEBUG"/>

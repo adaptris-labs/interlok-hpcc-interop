@@ -123,6 +123,11 @@ distributions {
       into('config') {
         from(localizeConfig)
       }
+      into('docker') {
+        from {
+          "src/main/docker"
+        }
+      }
       // Exclude the localized property files
       exclude "**/*.properties.*"
       exclude "config/variables-local.properties"
