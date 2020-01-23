@@ -37,4 +37,8 @@ jobs:
           ${{ runner.os }}-gradle-cache-
     - name: Gradle Check
       run: |
+        echo "amazon.access.key=DummyAccessKey" >> ./src/main/interlok/config/variables-local.properties
+        echo "amazon.secret.key=DummySecretKey" >> ./src/main/interlok/config/variables-local.properties
+        echo "amazon.region=eu-central-1" >> ./src/main/interlok/config/variables-local.properties
+        echo "amazon.s3.bucket=DummyBucket" >> ./src/main/interlok/config/variables-local.properties
         ./gradlew -Dorg.gradle.console=plain --no-daemon clean check

@@ -1,4 +1,4 @@
-# interlok-hpcc-docker
+# interlok-hpcc-docker [![Actions Status](https://github.com/adaptris-labs/interlok-hpcc-docker/workflows/verifyInterlokConfig/badge.svg)](https://github.com/adaptris-labs/interlok-hpcc-docker/actions)
 
 * Uses the HPCC 7.2.14 image (Dockerfile.hpcc)
 * Builds an interlok distribution based on CentOS 7 that includes dfuplus + interlok (Dockerfile.interlok)
@@ -32,9 +32,11 @@ amazon.s3.bucket=the target bucket name
 Then after that you can
 
 ```
-# Build the docker image and effectively runs `docker-compose up -d`
+# Build the docker image and effectively runs `docker-compose up -d`.
 $ ./gradlew docker dockerComposeUp
 ```
+
+It will take a while to build and sadly there is no output, so unless it errors out, please be patient
 
 * Connect to http://localhost:8080 and you'll see Interlok
 * Connect to http://localhost:8010 and you'll see ECL Watch
