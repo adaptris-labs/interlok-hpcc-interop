@@ -1,6 +1,9 @@
 # interlok-hpcc-docker
 
-Uses the HPCC 7.2.14 image, along with the latest-hpcc interlok image, overlays some additional jars on top. The configuration contains a
+* Uses the HPCC 7.2.14 image (Dockerfile.hpcc)
+* Builds an interlok distribution based on CentOS 7 that includes dfuplus + interlok (Dockerfile.interlok)
+
+The interlok configuration contains :
 
 * Channel that
    * Accepts HTTP POST request, and uploads that data as a new file in the configured S3 bucket under a unique-name
@@ -66,5 +69,3 @@ Server: Jetty(9.4.15.v20190215)
 
 * Refactor to use shared-services; since the pair that adds 200 OK + `{"operation":"success"}` should just be a shared-service.
 * Fill in the "GET" branch in the api/spray channel that despray so we don't get a 501 error anymore.
-* Switch to using the new _switch_ service once 3.9 is available.
-
