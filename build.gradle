@@ -175,3 +175,4 @@ dockerCompose {
 }
 
 docker.dependsOn interlokVerifyConfig
+check.dependsOn interlokVerifyConfig
