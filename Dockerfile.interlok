@@ -1,12 +1,16 @@
 FROM centos:7
 
+# Clearly they changed the location of it... some consistency might be nice; or a YUM repository.
+# ARG CLIENT_TOOLS_URL=https://edgecastcdn.net/00423A/releases/CE-Candidate-7.2.16/bin/clienttools/hpccsystems-clienttools-community_7.2.16-1.el7.x86_64.rpm
+ARG CLIENT_TOOLS_URL=https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.6.16/bin/clienttools/hpccsystems-clienttools-community_7.6.16-1.el7.x86_64.rpm
+
 # Since python34-libs requires epel-release we have to do at least 2 yum install steps; this does make me sad.
 # This list is also probably too many packages; but the hpcc documentation doesn't tell use the precise dependencies.
 # First line was sufficient (-epel-release) for client-tools 6.4.46; the line starting m4 required by 7.2.12
 RUN yum -y update && \
     yum -y install epel-release apr apr-util boost-regex expect atlas tbb curl unzip java-1.8.0-openjdk java-1.8.0-openjdk-devel && \
     yum -y install m4 libtool gcc-c++ openssh-server openssh-clients rsync psmisc zip libarchive libmemcached numactl-libs python34-libs && \
-    yum -y install https://edgecastcdn.net/00423A/releases/CE-Candidate-7.2.16/bin/clienttools/hpccsystems-clienttools-community_7.2.16-1.el7.x86_64.rpm && \
+    yum -y install ${CLIENT_TOOLS_URL} && \
     yum -y clean all && \
     mkdir -p /opt/interlok/logs
 
