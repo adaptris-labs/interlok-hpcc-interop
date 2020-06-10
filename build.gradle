@@ -1,178 +1,73 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-import org.apache.tools.ant.filters.*
 plugins {
-  id "distribution"
   id "com.palantir.docker" version "0.25.0"
   id 'com.palantir.docker-compose' version "0.25.0"
 }
 
 ext {
-  interlokCoreVersion = '3.10.1-RELEASE'
-  releaseVersion = project.hasProperty('releaseVersion') ? project.getProperty('releaseVersion') : 'latest'
+  interlokParentGradle = project.findProperty('interlokParentGradle') ?: 'https://raw.githubusercontent.com/adaptris-labs/interlok-build-parent/master/build.gradle'
+  dockerImageName = project.findProperty('dockerImageName') ?: "adaptrislabs/interlok-hpcc"
+  dockerImageTag = project.findProperty('dockerImageVersion') ?: "latest"
+  includeWar='true'
+  buildEnv='docker'
+  // Ensure variable substitutions work for 'check'
+  interlokVerifyEnvironmentProperties = [
+    INTERLOK_HOST: "localhost",
+    HPCC_HOST: "localhost",
+    AWS_ACCESS_KEY: "dummy-access-key",
+    AWS_SECRET_KEY: "dummy-secret-key",
+    AWS_REGION: "eu-central-1 because GDPR right",
+    AWS_BUCKET: "my-bucket-name"
+  ]
 
-  repoUsername = project.hasProperty('repoUsername') ? project.getProperty('repoUsername') : 'specify in gradle.properties'
-  repoPassword = project.hasProperty('repoPassword') ? project.getProperty('repoPassword') : 'specify in gradle.properties'
-  defaultNexusRepo = project.hasProperty('defaultNexusRepo') ? project.getProperty('defaultNexusRepo') : 'https://repo1.maven.org/maven2/'
-  dockerImageName = project.hasProperty('dockerImageName') ? project.getProperty('dockerImageName') : "adaptrislabs/hpcc-interlok"
-
-  adapterSourceConfig = "${projectDir}/src/main/interlok/config"
-  adapterTmpConfigDirectory = "${buildDir}/tmp/config-resolve"
-
-  log4j2Version='2.13.3'
-  slf4jVersion='1.7.30'
 }
 
-distTar.enabled=false
-distZip.enabled=true
-
-repositories {
-  mavenCentral()
-  maven { url "$defaultNexusRepo" }
-  maven { url "https://nexus.adaptris.net/nexus/content/groups/public" }
-  maven { url "https://nexus.adaptris.net/nexus/content/groups/interlok" }
+allprojects {
+  apply from: "${interlokParentGradle}"
 }
 
-ext.hostname = { ->
-  if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-    return System.getenv("COMPUTERNAME")
-  }
-  return System.getenv("HOSTNAME")
-}
-
-def overwriteWithLocal(file, dir){
-  def localFile = "${dir}/${file}." + hostname()
-  if(new File(localFile).exists()){
-    ant.copy(file: localFile, tofile: "${dir}/${file}", overwrite: 'true', verbose: 'true')
-  }
-  delete fileTree(dir) { include "${file}.*" }
-}
-
-task localizeConfig(type: Copy) {
-  from "${adapterSourceConfig}"
-  into "${adapterTmpConfigDirectory}"
-  doLast {
-    overwriteWithLocal("variables-local.properties", "${adapterTmpConfigDirectory}")
-    overwriteWithLocal("log4j2.xml", "${adapterTmpConfigDirectory}")
-    overwriteWithLocal("license.properties", "${adapterTmpConfigDirectory}")
-  }
-}
-
-configurations {
-  war{}
-  interlokRuntime{}
-  verify{}
-  all*.exclude group: 'c3p0'
-  all*.exclude group: 'commons-logging'
-  all*.exclude group: 'javamail'
-  all*.exclude group: 'javax.mail', module: 'mail'
-  all*.exclude group: 'org.glassfish.hk2.external'
-  all*.exclude group: 'xalan', module: 'xalan'
-  all*.exclude group: 'net.sf.saxon', module: 'saxon'
-  all*.exclude group: 'org.codehaus.woodstox'
-  all*.exclude group: 'org.eclipse.jetty.orbit', module: 'javax.mail.glassfish'
-}
-
-configurations.all {
-  resolutionStrategy.cacheChangingModulesFor 0, "seconds"
-}
 
 dependencies {
-  interlokRuntime ("com.adaptris:interlok-core:$interlokCoreVersion") { changing= true}
-  interlokRuntime ("com.adaptris:interlok-common:$interlokCoreVersion") { changing= true}
-  interlokRuntime ("com.adaptris:interlok-varsub:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-boot:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-xinclude:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-logging:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-hpcc:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-aws-s3:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-json:$interlokCoreVersion") { changing=true }
-  interlokRuntime ("com.adaptris:interlok-apache-http:$interlokCoreVersion") { changing=true }
-
-  interlokRuntime ("org.slf4j:slf4j-api:$slf4jVersion")
-  interlokRuntime ("org.slf4j:jcl-over-slf4j:$slf4jVersion")
-  interlokRuntime ("org.slf4j:jul-to-slf4j:$slf4jVersion")
-  interlokRuntime ("org.apache.logging.log4j:log4j-core:$log4j2Version")
-  interlokRuntime ("org.apache.logging.log4j:log4j-1.2-api:$log4j2Version")
-  interlokRuntime ("org.apache.logging.log4j:log4j-api:$log4j2Version")
-  interlokRuntime ("org.apache.logging.log4j:log4j-slf4j-impl:$log4j2Version")
-  // interlokRuntime ("org.fusesource.jansi:jansi:1.18")
-
-  war ("com.adaptris.ui:interlok:$interlokCoreVersion@war") {changing=true}
-  verify files("$buildDir/install/${project.name}/config"){
-    builtBy 'installDist'
-  }
-}
-
-distZip {
-  archiveName="${project.name}.zip"
-}
-
-distributions {
-  main {
-    contents {
-      from {
-        "src/main/interlok"
-      }
-      into('lib') {
-        from(project.configurations.interlokRuntime)
-      }
-      into('webapps') {
-        from(project.configurations.war)
-      }
-      // ovewrite the config files with custom ones.
-      into('config') {
-        from(localizeConfig)
-      }
-      into('docker') {
-        from {
-          "src/main/docker"
-        }
-      }
-      // Exclude the localized property files
-      exclude "**/*.properties.*"
-      exclude "config/variables-local.properties"
-      exclude "**/*.xml.*"
-      rename '(.*)-[0-9]+\\..*.jar', '$1.jar'
-      rename '(.*)-[0-9]+\\..*.war', '$1.war'
-      duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    }
-  }
-}
-
-task interlokVersion(type: JavaExec, dependsOn: installDist) {
-  workingDir = new File("${buildDir}/install/${project.name}")
-  classpath {
-    [configurations.interlokRuntime.asPath]
-  }
-  main = 'com.adaptris.core.management.SimpleBootstrap'
-  args "-version"
-}
-
-task interlokVerifyConfig(type: JavaExec, dependsOn: interlokVersion) {
-  workingDir = new File("${buildDir}/install/${project.name}")
-  classpath {
-    [configurations.interlokRuntime.asPath, configurations.verify.asPath]
-  }
-  // Since we know we are doing variable substitution, let's hard-code some properties
-  // so that strict VarSub works.
-  systemProperty "HPCC_HOST", "localhost"
-  systemProperty "INTERLOK_HOST", "localhost"
-  main = 'com.adaptris.core.management.SimpleBootstrap'
-  args "-configtest"
-  args "config/bootstrap.properties"
-}
-
-docker {
-  name dockerImageName
-  dockerfile file('Dockerfile.interlok')
-  tags releaseVersion
-  pull true
-  files tasks.installDist.outputs
+  interlokRuntime ("com.adaptris:interlok-xinclude:$interlokVersion") { changing=true }
+  interlokRuntime ("com.adaptris:interlok-logging:$interlokVersion") { changing=true }
+  interlokRuntime ("com.adaptris:interlok-hpcc:$interlokVersion") { changing=true }
+  interlokRuntime ("com.adaptris:interlok-aws-s3:$interlokVersion") { changing=true }
+  interlokRuntime ("com.adaptris:interlok-json:$interlokVersion") { changing=true }
+  interlokRuntime ("com.adaptris:interlok-apache-http:$interlokVersion") { changing=true }
 }
 
 dockerCompose {
   dockerComposeFile "docker-compose.yml"
 }
 
-docker.dependsOn interlokVerifyConfig
-check.dependsOn interlokVerifyConfig
+task dockerScriptPrepare(type: Copy) {
+  from ("src/main/docker")
+  into "${project.buildDir}/docker/docker"
+}
+
+// This is arguably confusing, but allows us to create a filesystem under build/docker
+// such that we can do
+// ./gradlew assemble
+// docker build -t blah:latest .
+// we would have to modify Dockerfile.interlok so that it reference "./src/main" and "./build/distribution" etc.
+// def dockerScriptCopy = copySpec {
+//   from ("src/main/docker")
+//   into ("./src/main/docker")
+// }
+
+// def dockerInstallDistCopy = copySpec {
+//   from (installDist)
+//   into "./build/distribution"
+// }
+
+docker {
+  name dockerImageName
+  dockerfile file('Dockerfile.interlok')
+  tags dockerImageTag
+  // copySpec.with(dockerScriptCopy, dockerInstallDistCopy)
+  files tasks.installDist.outputs
+  noCache true
+  pull true
+}
+
+dockerPrepare.dependsOn dockerScriptPrepare
+docker.dependsOn check,assemble
