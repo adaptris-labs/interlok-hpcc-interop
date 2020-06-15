@@ -1,0 +1,12 @@
+.git
+.gitattributes
+.gitignore
+README.md
+build
+build.gradle
+settings.gradle
+.gradle
+.github
+docker-compose.yml
+gradlew
+gradlew.bat

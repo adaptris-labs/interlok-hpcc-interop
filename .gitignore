@@ -2,3 +2,4 @@ gradle.properties
 *.lhrm32445
 build
 variables-local.properties.*
+variables-local-docker.properties

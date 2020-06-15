@@ -1,4 +1,4 @@
-# interlok-hpcc-docker [![Actions Status](https://github.com/adaptris-labs/interlok-hpcc-docker/workflows/verifyInterlokConfig/badge.svg)](https://github.com/adaptris-labs/interlok-hpcc-docker/actions)
+# interlok-hpcc-docker [![Actions Status](https://github.com/adaptris-labs/interlok-hpcc-docker/workflows/check/badge.svg)](https://github.com/adaptris-labs/interlok-hpcc-docker/actions)
 
 * Uses the HPCC 7.2.14 image (Dockerfile.hpcc)
 * Builds an interlok distribution based on CentOS 7 that includes dfuplus + interlok (Dockerfile.interlok)
@@ -14,11 +14,7 @@ The interlok configuration contains :
 
 ## Quickstart
 
-Create a file __src/main/interlok/config/variables-local.properties.hostname__; where hostname is the name of your machine; you can use `variables-local.properties` if you wish, but the *hostname* variant is auto excluded in the git ignore (so you won't check your secret keys in!)
-
-* On Windows that will be the value of COMPUTERNAME environment variable
-* On Linux that will be the HOSTNAME env variarable
-* On Mac; the HOSTNAME environment variable isn't always defined...
+Create a file __src/main/interlok/config/variables-local-docker.properties__; you just can use `variables-local.properties` if you wish, but the *-docker* variant is auto excluded in the git ignore (so you won't check your secret keys in!)
 
 This is where you'll store all your secret keys...
 

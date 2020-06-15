@@ -14,7 +14,7 @@ services:
       - "9876:9876"
 
   interlok:
-    image: adaptrislabs/hpcc-interlok:latest
+    image: adaptrislabs/interlok-hpcc:latest
     container_name: interlok
     hostname: interlok
     ports:
