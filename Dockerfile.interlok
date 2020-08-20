@@ -1,8 +1,8 @@
 FROM centos:7
 
-# Clearly they changed the location of it... some consistency might be nice; or a YUM repository.
-# ARG CLIENT_TOOLS_URL=https://edgecastcdn.net/00423A/releases/CE-Candidate-7.2.16/bin/clienttools/hpccsystems-clienttools-community_7.2.16-1.el7.x86_64.rpm
-ARG CLIENT_TOOLS_URL=https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.6.16/bin/clienttools/hpccsystems-clienttools-community_7.6.16-1.el7.x86_64.rpm
+# Pin the client tools version to the platform version
+# ARG CLIENT_TOOLS_URL=https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.6.16/bin/clienttools/hpccsystems-clienttools-community_7.6.16-1.el7.x86_64.rpm
+ARG CLIENT_TOOLS_URL=https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.10.10/bin/clienttools/hpccsystems-clienttools-community_7.10.10-1.el7.x86_64.rpm
 
 # Since python34-libs requires epel-release we have to do at least 2 yum install steps; this does make me sad.
 # This list is also probably too many packages; but the hpcc documentation doesn't tell use the precise dependencies.

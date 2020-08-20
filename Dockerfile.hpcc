@@ -1,12 +1,14 @@
-FROM hpccsystems/hpcc:7.2.14-1
+FROM hpccsystems/platform:7.10.10-1
 
 EXPOSE 8010 8002 8015 9876
 
 COPY ./src/main/docker/hpcc-docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN \
-  sed -i 's/useDropZoneRestriction=true/useDropZoneRestriction=false/g' /etc/HPCCSystems/environment.conf && \
-  chmod +x /docker-entrypoint.sh
+    chmod +x /docker-entrypoint.sh && \
+    curl -fsSL -o /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.1/dumb-init_1.2.1_amd64 && \
+    chmod +x /usr/local/bin/dumb-init && \
+    sed -i 's/useDropZoneRestriction=true/useDropZoneRestriction=false/g' /etc/HPCCSystems/environment.conf && \
+    chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["/usr/sbin/sshd", "-D"]
