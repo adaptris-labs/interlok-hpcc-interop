@@ -1,6 +1,7 @@
 # interlok-hpcc-docker [![Actions Status](https://github.com/adaptris-labs/interlok-hpcc-docker/workflows/check/badge.svg)](https://github.com/adaptris-labs/interlok-hpcc-docker/actions)
 
 ~~__Update : 2020-06-29 hpccsystems/hpcc:7.2.14-1 has been removed from hub.docker.com, so this project is not usable out of the box. It might come back, it might not__~~
+
 __Update: We switched to hpccsystems/platform:7.10.10-1__
 
 * Uses the HPCC 7.2.14 image (Dockerfile.hpcc)
