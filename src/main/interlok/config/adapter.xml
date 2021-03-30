@@ -10,14 +10,24 @@
       </dfuplus-connection>
       <amazon-s3-connection>
         <unique-id>shared-amazon-s3</unique-id>
-        <authentication class="aws-keys-authentication">
-          <access-key>${amazon.access.key}</access-key>
-          <secret-key>${amazon.secret.key}</secret-key>
-        </authentication>
+        <credentials class="aws-static-credentials-builder">
+          <authentication class="aws-keys-authentication">
+            <access-key>${amazon.access.key}</access-key>
+            <secret-key>${amazon.secret.key}</secret-key>
+          </authentication>
+        </credentials>
         <region>${amazon.region}</region>
       </amazon-s3-connection>
     </connections>
-    <services/>
+    <services>
+      <add-metadata-service>
+        <unique-id>Add 200 response code</unique-id>
+        <metadata-element>
+          <key>HTTP_RESPONSE</key>
+          <value>200</value>
+        </metadata-element>
+      </add-metadata-service>
+    </services>
   </shared-components>
   <message-error-handler class="standard-processing-exception-handler">
     <processing-exception-service class="service-list">
@@ -46,9 +56,7 @@
         <standard-workflow>
           <consumer class="jetty-message-consumer">
             <unique-id>spray-to-thor</unique-id>
-            <destination class="configured-consume-destination">
-              <destination>/api/hpcc/*</destination>
-            </destination>
+            <path>/api/hpcc/*</path>
           </consumer>
           <service-collection class="service-list">
             <services>
@@ -86,12 +94,8 @@
                           <lookup-name>shared-amazon-s3</lookup-name>
                         </connection>
                         <operation class="amazon-s3-download">
-                          <bucket-name class="constant-data-input-parameter">
-                            <value>%message{s3bucket}</value>
-                          </bucket-name>
-                          <key class="constant-data-input-parameter">
-                            <value>%message{s3filename}</value>
-                          </key>
+                          <bucket>%message{s3bucket}</bucket>
+                          <object-name>%message{s3filename}</object-name>
                         </operation>
                       </amazon-s3-service>
                       <standalone-producer>
@@ -100,25 +104,19 @@
                           <lookup-name>dfuplus-connection</lookup-name>
                         </connection>
                         <producer class="spray-to-thor">
-                          <destination class="configured-destination">
-                            <destination>messages::in::%message{s3filename}</destination>
-                          </destination>
+                          <logicalFilename>messages::in::%message{s3filename}</logicalFilename>
                           <cluster>mythor</cluster>
                           <overwrite>true</overwrite>
                           <spray-format class="spray-format-csv"/>
                         </producer>
                       </standalone-producer>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <unique-id>set success payload</unique-id>
                         <template><![CDATA[{"operation":"success"}]]></template>
-                      </payload-from-metadata-service>
-                      <add-metadata-service>
-                        <unique-id>Add 200 response code</unique-id>
-                        <metadata-element>
-                          <key>HTTP_RESPONSE</key>
-                          <value>200</value>
-                        </metadata-element>
-                      </add-metadata-service>
+                      </payload-from-template>
+                      <service class="shared-service">
+                        <lookup-name>Add 200 response code</lookup-name>
+                      </service>
                     </services>
                   </service>`
                 </case>
@@ -131,9 +129,9 @@
                   <service class="service-list">
                     <unique-id>hpcc-despray</unique-id>
                     <services>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <template><![CDATA[{"failure": "not-yet-implemented"}]]></template>
-                      </payload-from-metadata-service>
+                      </payload-from-template>
                       <add-metadata-service>
                         <unique-id>Add 501 Not Implemented</unique-id>
                         <metadata-element>
@@ -149,9 +147,9 @@
                   <service class="service-list">
                     <unique-id>not-handled</unique-id>
                     <services>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <template><![CDATA[{"failure": "not-handled"}]]></template>
-                      </payload-from-metadata-service>
+                      </payload-from-template>
                       <add-metadata-service>
                         <unique-id>Add 404 ERROR code</unique-id>
                         <metadata-element>
@@ -170,6 +168,7 @@
               </jetty-response-service>
             </services>
           </service-collection>
+          <unique-id>jetty-to-hpcc</unique-id>
         </standard-workflow>
       </workflow-list>
       <unique-id>jetty-to-hpcc</unique-id>
@@ -180,9 +179,7 @@
         <standard-workflow>
           <consumer class="jetty-message-consumer">
             <unique-id>aws</unique-id>
-            <destination class="configured-consume-destination">
-              <destination>/api/aws/*</destination>
-            </destination>
+            <path>/api/aws/*</path>
           </consumer>
           <service-collection class="service-list">
             <services>
@@ -206,24 +203,16 @@
                           <lookup-name>shared-amazon-s3</lookup-name>
                         </connection>
                         <operation class="amazon-s3-upload">
-                          <bucket-name class="constant-data-input-parameter">
-                            <value>${amazon.s3.bucket}</value>
-                          </bucket-name>
-                          <key class="constant-data-input-parameter">
-                            <value>%message{uid}</value>
-                          </key>
+                          <bucket>${amazon.s3.bucket}</bucket>
+                          <object-name>%message{uid}</object-name>
                         </operation>
                       </amazon-s3-service>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <template><![CDATA[{"filename":"%message{uid}", "bucket":"${amazon.s3.bucket}"}]]></template>
-                      </payload-from-metadata-service>
-                      <add-metadata-service>
-                        <unique-id>Add 200 response code</unique-id>
-                        <metadata-element>
-                          <key>HTTP_RESPONSE</key>
-                          <value>200</value>
-                        </metadata-element>
-                      </add-metadata-service>
+                      </payload-from-template>
+                      <service class="shared-service">
+                        <lookup-name>Add 200 response code</lookup-name>
+                      </service>
                     </services>
                   </service>
                 </case>
@@ -243,24 +232,16 @@
                           <lookup-name>shared-amazon-s3</lookup-name>
                         </connection>
                         <operation class="amazon-s3-delete">
-                          <bucket-name class="constant-data-input-parameter">
-                            <value>%message{s3bucket}</value>
-                          </bucket-name>
-                          <key class="constant-data-input-parameter">
-                            <value>%message{s3filename}</value>
-                          </key>
+                          <bucket>%message{s3bucket}</bucket>
+                          <object-name>%message{s3filename}</object-name>
                         </operation>
                       </amazon-s3-service>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <template><![CDATA[{"operation":"success"}]]></template>
-                      </payload-from-metadata-service>
-                      <add-metadata-service>
-                        <unique-id>Add 200 response code</unique-id>
-                        <metadata-element>
-                          <key>HTTP_RESPONSE</key>
-                          <value>200</value>
-                        </metadata-element>
-                      </add-metadata-service>
+                      </payload-from-template>
+                      <service class="shared-service">
+                        <lookup-name>Add 200 response code</lookup-name>
+                      </service>
                     </services>
                   </service>
                 </case>
@@ -269,9 +250,9 @@
                   <service class="service-list">
                     <unique-id>not-handled</unique-id>
                     <services>
-                      <payload-from-metadata-service>
+                      <payload-from-template>
                         <template><![CDATA[{"failure": "not-handled"}]]></template>
-                      </payload-from-metadata-service>
+                      </payload-from-template>
                       <add-metadata-service>
                         <unique-id>Add 404 ERROR code</unique-id>
                         <metadata-element>
@@ -290,6 +271,7 @@
               </jetty-response-service>
             </services>
           </service-collection>
+          <unique-id>jetty-to-s3</unique-id>
         </standard-workflow>
       </workflow-list>
       <unique-id>jetty-to-s3</unique-id>

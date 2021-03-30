@@ -5,10 +5,10 @@ FROM centos:7
 ARG CLIENT_TOOLS_URL=https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.10.10/bin/clienttools/hpccsystems-clienttools-community_7.10.10-1.el7.x86_64.rpm
 
 # Since python34-libs requires epel-release we have to do at least 2 yum install steps; this does make me sad.
-# This list is also probably too many packages; but the hpcc documentation doesn't tell use the precise dependencies.
+# This list is also probably too many packages; but the hpcc documentation doesn't tell us the precise dependencies.
 # First line was sufficient (-epel-release) for client-tools 6.4.46; the line starting m4 required by 7.2.12
 RUN yum -y update && \
-    yum -y install epel-release apr apr-util boost-regex expect atlas tbb curl unzip java-1.8.0-openjdk java-1.8.0-openjdk-devel && \
+    yum -y install epel-release apr apr-util boost-regex expect atlas tbb curl unzip java-11-openjdk java-11-openjdk-devel && \
     yum -y install m4 libtool gcc-c++ openssh-server openssh-clients rsync psmisc zip libarchive libmemcached numactl-libs python34-libs && \
     yum -y install ${CLIENT_TOOLS_URL} && \
     yum -y clean all && \
