@@ -6,6 +6,7 @@ __Update: We switched to hpccsystems/platform:7.10.10-1__
 
 * Uses the HPCC 7.2.14 image (Dockerfile.hpcc)
 * Builds an interlok distribution based on CentOS 7 that includes dfuplus + interlok (Dockerfile.interlok)
+* Uses localstack to mimic S3 so it's entirely self-contained
 
 The interlok configuration contains :
 
@@ -18,16 +19,20 @@ The interlok configuration contains :
 
 ## Quickstart
 
-Create a file __src/main/interlok/config/variables-local-docker.properties__; you just can use `variables-local.properties` if you wish, but the *-docker* variant is auto excluded in the git ignore (so you won't check your secret keys in!)
+If you want to use localstack then you don't have to do anything, since the default values in _docker-compose.yml_ are already correct.
 
-This is where you'll store all your secret keys...
+If you want to use a real S3 bucket then
+
+- create a file __src/main/interlok/config/variables-local-docker.properties__; you just can use `variables-local.properties` if you wish, but the *-docker* variant is auto excluded in the git ignore (so you won't check your secret keys in!)
 
 ```
-amazon.access.key=My_Access_Key
-amazon.secret.key=My_Secret_Key
-amazon.region=The region you created the bucket
-amazon.s3.bucket=the target bucket name
+amazon.access.key=My Access Key
+amazon.secret.key=My Secret Key
+amazon.region=eu-west-1
+amazon.s3.bucket=my_bucket
 ```
+
+- comment out the `custom-endpoint` element inside the configuration.
 
 Then after that you can
 

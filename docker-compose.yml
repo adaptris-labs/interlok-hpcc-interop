@@ -12,6 +12,19 @@ services:
       - "8002:8002"
       - "8015:8015"
       - "9876:9876"
+  hpcc-localstack:
+    image: localstack/localstack
+    hostname: hpcc-localstack
+    container_name: hpcc-localstack
+    environment:
+      - SERVICES=s3
+      - USE_SSL=1
+      - AWS_ACCESS_KEY_ID=abc
+      - AWS_SECRET_ACCESS_KEY=def
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./src/test/scripts:/docker-entrypoint-initaws.d
 
   interlok:
     image: adaptrislabs/interlok-hpcc:latest
@@ -23,7 +36,14 @@ services:
     environment:
      - HPCC_HOST=hpcc-master
      - INTERLOK_HOST=interlok
+     - AWS_S3_ENDPOINT=http://hpcc-localstack:4566
+     - AWS_BUCKET=localstack-bucket
+     - AWS_ACCESS_KEY=Dummy Key
+     - AWS_SECRET_KEY=Dummy Secret
+     - AWS_REGION=eu-west-1
     depends_on:
       - hpcc-master
+      - hpcc-localstack
     links:
       - hpcc-master:hpcc-master
+      - hpcc-localstack:hpcc-localstack

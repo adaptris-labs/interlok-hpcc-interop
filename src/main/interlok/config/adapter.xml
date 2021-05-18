@@ -10,13 +10,21 @@
       </dfuplus-connection>
       <amazon-s3-connection>
         <unique-id>shared-amazon-s3</unique-id>
+        <region>${amazon.region}</region>
         <credentials class="aws-static-credentials-builder">
           <authentication class="aws-keys-authentication">
             <access-key>${amazon.access.key}</access-key>
             <secret-key>${amazon.secret.key}</secret-key>
           </authentication>
         </credentials>
-        <region>${amazon.region}</region>
+        <!-- Forces us into localstack by providing an endpoint
+             Comment custom-endpoint out if you want to use real AWS
+        -->
+        <custom-endpoint>
+          <service-endpoint>${amazon.s3.endpoint}</service-endpoint>
+          <signing-region>${amazon.region}</signing-region>
+        </custom-endpoint>
+        <force-path-style-access>true</force-path-style-access>
       </amazon-s3-connection>
     </connections>
     <services>
@@ -226,6 +234,7 @@
                   <service class="service-list">
                     <unique-id>s3-delete</unique-id>
                     <services>
+                      <!-- Un-needed for localstack
                       <amazon-s3-service>
                         <unique-id>delete-from-s3</unique-id>
                         <connection class="shared-connection">
@@ -238,6 +247,10 @@
                       </amazon-s3-service>
                       <payload-from-template>
                         <template><![CDATA[{"operation":"success"}]]></template>
+                      </payload-from-template>
+                      -->
+                      <payload-from-template>
+                        <template><![CDATA[{"operation":"no-op because localstack"}]]></template>
                       </payload-from-template>
                       <service class="shared-service">
                         <lookup-name>Add 200 response code</lookup-name>
