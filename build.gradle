@@ -16,7 +16,8 @@ ext {
     AWS_ACCESS_KEY: "dummy-access-key",
     AWS_SECRET_KEY: "dummy-secret-key",
     AWS_REGION: "eu-central-1 because GDPR right",
-    AWS_BUCKET: "my-bucket-name"
+    AWS_BUCKET: "localstack-bucket",
+    AWS_S3_ENDPOINT: "http://localstack:4566"
   ]
 
 }
